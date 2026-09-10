@@ -271,26 +271,26 @@ public partial class MainWindow : FluentWindow
         else Error("无法移入隔离区", r.Message);
     }
 
-    private async void OnKillAndRetry(object sender, RoutedEventArgs e)
+    private async void OnKillLockers(object sender, RoutedEventArgs e)
     {
         if (!ValidateTarget(out var path)) return;
 
         var confirm = System.Windows.MessageBox.Show(
-            "这将强制终止所有占用该文件的进程，然后将其删除。这些应用中未保存的工作将会丢失。\n\n是否继续？",
+            "这将强制终止所有占用该目标的程序。这些应用中未保存的工作将会丢失。\n\n是否继续？",
             "结束进程？", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
         if (confirm != System.Windows.MessageBoxResult.Yes) return;
 
-        Info("正在处理…", "正在终止占用进程并删除。");
-        var r = await Run("killdelete", path, SecureWipeBox.IsChecked == true);
+        Info("正在处理…", "正在终止占用进程。");
+        var r = await Run("kill", path, false);
 
         if (r.Ok)
         {
-            Success("已删除", r.Message);
-            ShowLockers(Array.Empty<RestartManager.LockingProcess>());
+            Success("操作完成词", r.Message);
+            AutoScan(); // 重新扫描以验证锁定是否已解除
         }
         else
         {
-            Error("仍然被占用", r.Message);
+            Error("失败", r.Message);
         }
     }
 

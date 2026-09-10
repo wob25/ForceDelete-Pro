@@ -88,9 +88,9 @@
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0">
                     <TextBlock Text="正在占用此文件的进程" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <ui:Button x:Name="KillBtn" HorizontalAlignment="Right" Content="结束所有进程并重试"
+                    <ui:Button x:Name="KillBtn" HorizontalAlignment="Right" Content="结束占用进程"
                                Icon="{ui:SymbolIcon Prohibited24}" Appearance="Caution"
-                               Click="OnKillAndRetry" Visibility="Collapsed" />
+                               Click="OnKillLockers" Visibility="Collapsed" />
                 </Grid>
                 <Grid Grid.Row="1" Margin="0,8,0,0">
                     <ListView x:Name="LockList" Background="Transparent" BorderThickness="0" Foreground="Orange">

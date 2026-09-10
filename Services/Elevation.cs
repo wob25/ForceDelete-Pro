@@ -53,6 +53,10 @@ public static class Elevation
                 case "driver":
                     var dr = DriverStore.RemovePackage(path);
                     return new OpResult(dr.Success, dr.Message);
+                case "kill":
+                    var lockersToKill = RestartManager.GetLockingProcesses(path);
+                    int killedCount = lockersToKill.Count(p => SafetyGuard.KillProcess(p.Pid));
+                    return new OpResult(true, $"已尝试终止 {killedCount}/{lockersToKill.Count} 个占用进程。");
                 case "killdelete":
                     var lockers = RestartManager.GetLockingProcesses(path);
                     int killed = lockers.Count(p => SafetyGuard.KillProcess(p.Pid));
