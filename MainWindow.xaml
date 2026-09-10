@@ -1,0 +1,139 @@
+<ui:FluentWindow x:Class="ForceDelete.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="强制删除 (ForceDelete)"
+        Width="720" Height="540"
+        MinWidth="600" MinHeight="480"
+        WindowBackdropType="Mica"
+        ExtendsContentIntoTitleBar="True"
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        Drop="OnDrop" DragOver="OnDragOver" DragEnter="OnDragEnter" DragLeave="OnDragLeave">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="强制删除 (ForceDelete)">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="Delete24" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <!-- Drop zone (whole window accepts drops; this is the visual cue) -->
+        <Border x:Name="DropZone" Grid.Row="1" Margin="16,4,16,0" Height="72" CornerRadius="8"
+                Background="#14FFFFFF" BorderBrush="#33FFFFFF" BorderThickness="1.5"
+                Cursor="Hand" MouseLeftButtonUp="OnBrowseFile">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="22" Opacity="0.8" VerticalAlignment="Center" />
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="将文件或文件夹拖放到窗口任意位置" FontWeight="SemiBold" />
+                    <TextBlock Text="或点击此处进行浏览" Opacity="0.6" FontSize="12" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Path row -->
+        <Grid Grid.Row="2" Margin="16,10,16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:TextBox x:Name="PathBox" Grid.Column="0" Icon="{ui:SymbolIcon Document24}"
+                        TextChanged="OnPathChanged" LostFocus="OnPathCommitted" KeyDown="OnPathKeyDown"
+                        PlaceholderText="粘贴路径，或使用右侧按钮 →" />
+            <ui:Button Grid.Column="1" Margin="8,0,0,0" Content="文件…" Click="OnBrowseFile" />
+            <ui:Button Grid.Column="2" Margin="8,0,0,0" Content="文件夹…" Click="OnBrowseFolder" />
+        </Grid>
+
+        <!-- Details + actions + status -->
+        <StackPanel Grid.Row="3" Margin="16,10,16,0">
+            <Border CornerRadius="6" Background="#14FFFFFF" Padding="10,7">
+                <TextBlock x:Name="Details" FontSize="12" Opacity="0.85" TextTrimming="CharacterEllipsis"
+                           Text="未选择目标 — 拖放路径到上方以查看文件大小、属性和所有者。" />
+            </Border>
+
+            <WrapPanel Margin="0,12,0,0">
+                <ui:Button x:Name="CheckBtn" Content="谁在占用？" Icon="{ui:SymbolIcon Search24}"
+                           Click="OnCheckLocks" Margin="0,0,8,0" />
+                <ui:Button x:Name="DeleteBtn" Content="强制删除" Icon="{ui:SymbolIcon Delete24}"
+                           Appearance="Danger" Click="OnForceDelete" Margin="0,0,8,0" />
+                <ui:Button x:Name="QuarantineBtn" Content="移入隔离" Icon="{ui:SymbolIcon ShieldKeyhole24}"
+                           Appearance="Caution" Click="OnQuarantine" Margin="0,0,8,0" />
+                <ui:Button x:Name="RebootBtn" Content="重启后删除" Icon="{ui:SymbolIcon ArrowClockwise24}"
+                           Click="OnDeleteOnReboot" Margin="0,0,8,0" />
+                <CheckBox x:Name="SecureWipeBox" Content="安全擦除 (不可恢复)" VerticalAlignment="Center" />
+            </WrapPanel>
+
+            <ui:InfoBar x:Name="Status" Margin="0,12,0,0" IsOpen="True" IsClosable="False"
+                        Severity="Informational" Title="就绪"
+                        Message="粘贴或选择路径，然后选择一项操作。" />
+        </StackPanel>
+
+        <!-- Locking processes (fills remaining space) -->
+        <ui:Card Grid.Row="4" Margin="16,12,16,0" Padding="14"
+                 VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <Grid VerticalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <TextBlock Text="正在占用此文件的进程" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <ui:Button x:Name="KillBtn" HorizontalAlignment="Right" Content="结束所有进程并重试"
+                               Icon="{ui:SymbolIcon Prohibited24}" Appearance="Caution"
+                               Click="OnKillAndRetry" Visibility="Collapsed" />
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,8,0,0">
+                    <ListView x:Name="LockList" Background="Transparent" BorderThickness="0">
+                        <ListView.Resources>
+                            <Style TargetType="GridViewColumnHeader">
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="Padding" Value="8,4" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="GridViewColumnHeader">
+                                            <Border Background="Transparent"
+                                                    BorderBrush="#22FFFFFF" BorderThickness="0,0,0,1"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="PID" Width="64" DisplayMemberBinding="{Binding Pid}" />
+                                <GridViewColumn Header="进程名" Width="150" DisplayMemberBinding="{Binding Name}" />
+                                <GridViewColumn Header="程序路径" Width="380" DisplayMemberBinding="{Binding ImagePath}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <TextBlock x:Name="LockEmpty" Opacity="0.45" FontSize="12" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                               Text="没有发现占用进程。&#x0a;加载文件后将自动检查。" />
+                </Grid>
+            </Grid>
+        </ui:Card>
+
+        <!-- Footer tools -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,8,16,12">
+            <ui:Button Content="查看隔离区" Icon="{ui:SymbolIcon FolderOpen24}"
+                       Appearance="Transparent" Click="OnOpenQuarantine" Margin="0,0,6,0" />
+            <ui:Button Content="查看日志" Icon="{ui:SymbolIcon DocumentText24}"
+                       Appearance="Transparent" Click="OnOpenLog" />
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>
