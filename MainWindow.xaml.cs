@@ -93,19 +93,27 @@ public partial class MainWindow : FluentWindow
     /// <summary>On loading a valid file, show its details and silently scan for lockers.</summary>
     private void AutoScan()
     {
-        UpdateDetails();
-        var path = TargetPath;
-        if (!File.Exists(path) && !Directory.Exists(path)) { ShowLockers(Array.Empty<RestartManager.LockingProcess>()); return; }
+        try
+        {
+            UpdateDetails();
+            var path = TargetPath;
+            if (!File.Exists(path) && !Directory.Exists(path)) { ShowLockers(Array.Empty<RestartManager.LockingProcess>()); return; }
 
-        var lockers = RestartManager.GetLockingProcesses(path);
-        ShowLockers(lockers);
+            var lockers = RestartManager.GetLockingProcesses(path);
+            ShowLockers(lockers);
 
-        if (DriverStore.IsDriverStorePath(path))
-            Info("驱动程序包", "这是一个暂存的驱动程序 —— 强制删除将通过 pnputil 正确卸载并删除它。");
-        else if (lockers.Count > 0)
-            Warn($"{lockers.Count} 个进程正在占用此项目", "在关闭这些进程前，强制删除可能会失败 —— 请使用‘结束所有进程并重试’。");
-        else
-            Info("就绪", "没有进程占用此项目。");
+            if (DriverStore.IsDriverStorePath(path))
+                Info("驱动程序包", "这是一个暂存的驱动程序 —— 强制删除将通过 pnputil 正确卸载并删除它。");
+            else if (lockers.Count > 0)
+                Warn($"{lockers.Count} 个进程正在占用此项目", "在关闭这些进程前，强制删除可能会失败 —— 请使用‘结束所有进程并重试’。");
+            else
+                Info("就绪", "没有进程占用此项目。");
+        }
+        catch (Exception ex)
+        {
+            Error("扫描失败", $"扫描占用进程时发生错误: {ex.Message}");
+            ShowLockers(Array.Empty<RestartManager.LockingProcess>());
+        }
     }
 
     private void UpdateDetails()

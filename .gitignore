@@ -1,23 +1,29 @@
-# .NET Core / Visual Studio
-bin/
-obj/
-dist/
-dist_new/
-dist_final/
-dist_final_v2/
-dist_auto/
-dist_godmode/
-dist_ultimate/
-dist_super/
+# .NET Build Artifacts
+[Bb]in/
+[Oo]bj/
+out/
+publish/
 
-# User data
-ForceDelete_Data/
+# Custom Dist Folders (Keep root clean)
+dist*/
+APP_Versions/
+
+# IDE / User Files
 .vs/
 .idea/
 *.user
-*.suo
 *.userosscache
+*.suo
 *.sln.docstates
+*.cache
+*.opendb
 
-# Artifacts
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project Specific
 .artifacts/
+Logs/
+Quarantine/

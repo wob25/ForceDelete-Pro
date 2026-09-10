@@ -140,14 +140,48 @@ public static class RestartManager
     {
         try
         {
-            var fileNames = new List<string>();
+            var matchKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // 1. 获取目标本身的名称 (解决 VS Code 这种以文件夹名为标题的情况)
+            try
+            {
+                string cleanedPath = targetPath.TrimEnd('\\', '/');
+                if (cleanedPath.Length > 3)
+                {
+                    string targetName = Path.GetFileName(cleanedPath);
+                    if (!string.IsNullOrEmpty(targetName)) matchKeywords.Add(targetName);
+                }
+            }
+            catch { }
+
+            // 2. 收集内部文件名 (仅当目标是目录时执行深度扫描)
             if (Directory.Exists(targetPath))
-                fileNames.AddRange(Directory.EnumerateFiles(targetPath).Select(Path.GetFileName).OfType<string>());
-            else
-                fileNames.Add(Path.GetFileName(targetPath));
+            {
+                try
+                {
+                    var options = new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 2 };
+                    int count = 0;
+                    foreach (var entry in Directory.EnumerateFileSystemEntries(targetPath, "*", options))
+                    {
+                        try
+                        {
+                            string name = Path.GetFileName(entry);
+                            if (!string.IsNullOrEmpty(name)) matchKeywords.Add(name);
+                        }
+                        catch { }
+                        if (++count > 100) break;
+                    }
+                }
+                catch { }
+            }
+            else if (File.Exists(targetPath))
+            {
+                try { matchKeywords.Add(Path.GetFileName(targetPath)); } catch { }
+            }
 
-            if (fileNames.Count == 0) return;
+            if (matchKeywords.Count == 0) return;
 
+            // 3. 遍历所有带窗口的进程进行标题匹配
             foreach (var proc in Process.GetProcesses())
             {
                 try
@@ -157,8 +191,8 @@ public static class RestartManager
                     string title = proc.MainWindowTitle;
                     if (string.IsNullOrEmpty(title)) continue;
 
-                    // 如果窗口标题包含我们要删除的文件名（例如 "*s.txt - 记事本"）
-                    if (fileNames.Any(name => title.Contains(name, StringComparison.OrdinalIgnoreCase)))
+                    // 模糊匹配：如果窗口标题包含任何一个关键字
+                    if (matchKeywords.Any(k => title.Contains(k, StringComparison.OrdinalIgnoreCase)))
                     {
                         if (seenPids.Add(proc.Id))
                             result.Add(CreateLockingProcess(proc.Id, proc.ProcessName));

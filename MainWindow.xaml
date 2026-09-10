@@ -93,7 +93,7 @@
                                Click="OnKillAndRetry" Visibility="Collapsed" />
                 </Grid>
                 <Grid Grid.Row="1" Margin="0,8,0,0">
-                    <ListView x:Name="LockList" Background="Transparent" BorderThickness="0">
+                    <ListView x:Name="LockList" Background="Transparent" BorderThickness="0" Foreground="Orange">
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">
                                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -113,9 +113,16 @@
                                 </Setter>
                             </Style>
                         </ListView.Resources>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Foreground" Value="Orange" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter Property="Margin" Value="0,1" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="PID" Width="64" DisplayMemberBinding="{Binding Pid}" />
+                                <GridViewColumn Header="PID" Width="80" DisplayMemberBinding="{Binding Pid}" />
                                 <GridViewColumn Header="进程名" Width="150" DisplayMemberBinding="{Binding Name}" />
                                 <GridViewColumn Header="程序路径" Width="380" DisplayMemberBinding="{Binding ImagePath}" />
                             </GridView>
